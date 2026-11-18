@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#11130f">
+    <meta name="description" content="A personal training dashboard for building stronger, more consistent workout habits.">
+    <title>Form &amp; Focus — AI Gym Coach</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #11130f;
+        color: #f5f4ed;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+        --bg: #11130f;
+        --panel: #191b16;
+        --panel-soft: #1e211a;
+        --line: #2b2e26;
+        --muted: #9c9e91;
+        --lime: #c7f36b;
+        --lime-dark: #27311c;
+        --orange: #f1a36c;
+      }
+
+      * { box-sizing: border-box; }
+      body { min-width: 320px; min-height: 100vh; margin: 0; }
+      button, input { font: inherit; }
+      button { color: inherit; }
+      button:focus-visible, input:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
+      .app { display: grid; grid-template-columns: 228px minmax(0, 1fr); min-height: 100vh; }
+      .sidebar {
+        position: sticky; top: 0; display: flex; height: 100vh; flex-direction: column;
+        padding: 27px 17px 18px; border-right: 1px solid var(--line); background: #151712;
+      }
+      .brand { display: flex; align-items: center; gap: 11px; padding: 0 8px; }
+      .brand-mark {
+        display: grid; width: 35px; height: 35px; place-items: center; border-radius: 11px;
+        background: var(--lime); color: #171b11; font-size: 19px; font-weight: 900;
+      }
+      .brand-name { font-size: 14px; font-weight: 800; letter-spacing: .03em; }
+      .brand-caption { margin-top: 3px; color: var(--muted); font-size: 10px; }
+      .nav-label { margin: 40px 10px 11px; color: #72766a; font-size: 9px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+      .nav { display: grid; gap: 5px; }
+      .nav-button {
+        display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 12px; border: 0;
+        border-radius: 9px; background: transparent; color: #a4a69a; cursor: pointer; font-size: 12px; text-align: left;
+      }
+      .nav-button:hover { background: #20231c; color: #f5f4ed; }
+      .nav-button.active { background: #272c20; color: var(--lime); }
+      .nav-icon { width: 17px; color: inherit; font-size: 16px; text-align: center; }
+      .sidebar-bottom { margin-top: auto; }
+      .coach-tip { padding: 15px; border: 1px solid #35392c; border-radius: 12px; background: #20231b; }
+      .coach-tip-label { color: var(--lime); font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+      .coach-tip p { margin: 9px 0 0; color: #c9c9bb; font-size: 11px; line-height: 1.65; }
+      .profile { display: flex; align-items: center; gap: 10px; margin: 20px 4px 0; padding-top: 16px; border-top: 1px solid var(--line); }
+      .avatar { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50%; background: #53483d; color: #f6dbbd; font-size: 12px; font-weight: 800; }
+      .profile-name { font-size: 11px; font-weight: 700; }
+      .profile-note { margin-top: 3px; color: var(--muted); font-size: 9px; }
+      .content { width: min(1360px, 100%); margin: 0 auto; padding: 0 38px 45px; }
+      .topbar { display: flex; min-height: 77px; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
+      .breadcrumb { color: var(--muted); font-size: 11px; }
+      .breadcrumb strong { color: #efefe7; font-weight: 600; }
+      .top-actions { display: flex; align-items: center; gap: 12px; }
+      .today { color: #b7b9ae; font-size: 11px; }
+      .streak { display: flex; align-items: center; gap: 6px; padding: 7px 10px; border: 1px solid #34352a; border-radius: 20px; color: #e6d3a4; font-size: 10px; font-weight: 700; }
+      .page { display: none; }
+      .page.active { display: block; }
+      .dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(245px, .82fr); gap: 22px; padding-top: 28px; }
+      .main-column, .right-column { min-width: 0; }
+      .greeting { margin: 3px 0 5px; font-size: clamp(24px, 3vw, 33px); font-weight: 650; letter-spacing: -.045em; }
+      .subheading { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+      .hero {
+        position: relative; overflow: hidden; min-height: 198px; margin-top: 22px; padding: 25px 27px;
+        border: 1px solid #4b5437; border-radius: 14px;
+        background: radial-gradient(ellipse at 94% 28%, rgba(198, 243, 107, .14), transparent 34%), linear-gradient(120deg, #252b1d, #20231b 66%);
+      }
+      .hero:after { position: absolute; right: 24px; bottom: -47px; color: rgba(199, 243, 107, .08); content: "✳"; font-size: 210px; line-height: 1; transform: rotate(-17deg); }
+      .hero-kicker { color: var(--lime); font-size: 9px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+      .hero h2 { position: relative; z-index: 1; max-width: 390px; margin: 12px 0 8px; font-size: 25px; letter-spacing: -.035em; }
+      .hero p { position: relative; z-index: 1; max-width: 370px; margin: 0; color: #b8bbae; font-size: 11px; line-height: 1.7; }
+      .primary-button {
+        position: relative; z-index: 1; display: inline-flex; min-height: 37px; align-items: center; gap: 8px;
+        margin-top: 17px; padding: 0 14px; border: 0; border-radius: 7px; background: var(--lime);
+        color: #1c2114; cursor: pointer; font-size: 10px; font-weight: 800;
+      }
+      .primary-button:hover { background: #d7ff89; }
+      .section-heading { display: flex; align-items: center; justify-content: space-between; margin: 28px 0 13px; }
+      .section-heading h2 { margin: 0; font-size: 14px; font-weight: 700; }
+      .text-button { padding: 4px 0; border: 0; background: none; color: var(--lime); cursor: pointer; font-size: 10px; }
+      .workout-list { display: grid; gap: 9px; }
+      .workout-card {
+        display: grid; grid-template-columns: 41px minmax(0, 1fr) auto; align-items: center; gap: 12px;
+        padding: 13px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); transition: border-color .15s, transform .15s;
+      }
+      .workout-card:hover { transform: translateY(-1px); border-color: #4a503d; }
+      .workout-symbol { display: grid; width: 41px; height: 41px; place-items: center; border-radius: 9px; background: #292c21; font-size: 18px; }
+      .workout-name { font-size: 11px; font-weight: 700; }
+      .workout-meta { margin-top: 5px; color: var(--muted); font-size: 9px; }
+      .workout-tag { padding: 5px 7px; border-radius: 5px; background: #25271f; color: #c2c3b9; font-size: 8px; }
+      .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 19px; }
+      .stat-card { min-height: 87px; padding: 13px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+      .stat-label { color: var(--muted); font-size: 9px; }
+      .stat-value { margin-top: 9px; font-size: 20px; font-weight: 700; letter-spacing: -.03em; }
+      .stat-unit { margin-left: 4px; color: var(--muted); font-size: 9px; font-weight: 500; letter-spacing: 0; }
+      .panel { padding: 17px; border: 1px solid var(--line); border-radius: 11px; background: var(--panel); }
+      .panel + .panel { margin-top: 13px; }
+      .panel-title { display: flex; align-items: center; justify-content: space-between; margin: 0; font-size: 12px; font-weight: 700; }
+      .panel-subtitle { margin: 6px 0 0; color: var(--muted); font-size: 9px; }
+      .week-chart { display: flex; height: 103px; align-items: end; justify-content: space-between; gap: 9px; padding-top: 16px; }
+      .day-column { display: flex; height: 100%; flex: 1; flex-direction: column; align-items: center; justify-content: end; gap: 7px; }
+      .bar-track { display: flex; width: 100%; height: 69px; align-items: end; overflow: hidden; border-radius: 5px; background: #24261f; }
+      .bar-fill { width: 100%; min-height: 3px; border-radius: 5px; background: #596045; transition: height .25s ease; }
+      .bar-fill.done { background: var(--lime); }
+      .day-label { color: #8d9085; font-size: 8px; }
+      .day-label.today { color: var(--lime); }
+      .goal-row { display: flex; align-items: center; justify-content: space-between; margin-top: 19px; padding-top: 14px; border-top: 1px solid var(--line); }
+      .goal-copy { color: #c5c6bb; font-size: 9px; }
+      .goal-copy strong { display: block; margin-bottom: 4px; color: #eeeee7; font-size: 10px; }
+      .goal-count { color: var(--lime); font-size: 12px; font-weight: 800; }
+      .coach-card { background: radial-gradient(ellipse at 95% 0%, rgba(199,243,107,.1), transparent 45%), var(--panel); }
+      .coach-card p { margin: 12px 0 0; color: #c4c5b9; font-size: 10px; line-height: 1.7; }
+      .coach-link { display: inline-flex; margin-top: 13px; padding: 0; border: 0; background: none; color: var(--lime); cursor: pointer; font-size: 9px; font-weight: 700; }
+      .page-header { padding: 31px 0 19px; }
+      .page-header h1 { margin: 0 0 6px; font-size: 25px; letter-spacing: -.04em; }
+      .page-header p { margin: 0; color: var(--muted); font-size: 11px; }
+      .all-workouts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+      .all-workouts .workout-card { min-height: 84px; }
+      .coach-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 14px; }
+      .chat-panel { display: flex; min-height: 440px; flex-direction: column; }
+      .chat-top { display: flex; align-items: center; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+      .coach-avatar { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 10px; background: var(--lime-dark); color: var(--lime); font-size: 17px; }
+      .chat-top strong { font-size: 11px; }
+      .online-label { margin-top: 3px; color: var(--lime); font-size: 9px; }
+      .chat-messages { display: flex; flex: 1; flex-direction: column; gap: 12px; overflow: auto; padding: 17px 0; }
+      .chat-message { max-width: 88%; padding: 11px 12px; border: 1px solid #303329; border-radius: 4px 11px 11px 11px; background: #20221c; color: #d6d7cd; font-size: 10px; line-height: 1.7; white-space: pre-wrap; }
+      .chat-message.user { align-self: flex-end; border-color: #39432a; border-radius: 11px 4px 11px 11px; background: #292f20; color: #f0f3e8; }
+      .chat-form { display: flex; gap: 8px; padding-top: 11px; border-top: 1px solid var(--line); }
+      .chat-form input { width: 100%; min-width: 0; padding: 10px 11px; border: 1px solid #35372e; border-radius: 7px; background: #131510; color: #f5f4ed; font-size: 10px; }
+      .send-button { width: 39px; flex: 0 0 39px; border: 0; border-radius: 7px; background: var(--lime); color: #171b11; cursor: pointer; font-size: 16px; font-weight: 800; }
+      .prompt-list { display: grid; gap: 8px; margin-top: 16px; }
+      .prompt-button { padding: 10px; border: 1px solid var(--line); border-radius: 7px; background: #1d1f19; color: #c4c5ba; cursor: pointer; font-size: 9px; line-height: 1.5; text-align: left; }
+      .prompt-button:hover { border-color: #697747; color: var(--lime); }
+      .disclaimer { margin: 12px 0 0; color: #777a70; font-size: 9px; line-height: 1.6; }
+      .progress-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+      .progress-summary .stat-card { padding: 17px; }
+      .progress-panel { padding: 20px; }
+      .progress-panel .week-chart { height: 190px; gap: 16px; }
+      .progress-panel .bar-track { max-width: 55px; height: 145px; }
+      .empty-state { padding: 25px; border: 1px dashed #3b3d33; border-radius: 10px; color: var(--muted); font-size: 11px; text-align: center; }
+      .toast { position: fixed; right: 20px; bottom: 20px; z-index: 5; padding: 11px 15px; border: 1px solid #48533a; border-radius: 8px; background: #252b1e; color: var(--lime); font-size: 11px; box-shadow: 0 8px 30px #0006; }
+      .toast[hidden] { display: none; }
+      .session-dialog { width: min(440px, calc(100% - 28px)); padding: 22px; border: 1px solid #414735; border-radius: 14px; background: #191b16; color: #f5f4ed; box-shadow: 0 18px 70px #0009; }
+      .session-dialog::backdrop { background: #080906c9; backdrop-filter: blur(3px); }
+      .dialog-kicker { color: var(--lime); font-size: 9px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+      .session-dialog h2 { margin: 8px 0 5px; font-size: 21px; letter-spacing: -.03em; }
+      .dialog-meta { color: var(--muted); font-size: 10px; }
+      .exercise-list { display: grid; gap: 8px; margin: 19px 0; padding: 0; list-style: none; }
+      .exercise-list li { padding: 10px 11px; border: 1px solid var(--line); border-radius: 7px; background: #20221c; color: #d7d8ce; font-size: 10px; line-height: 1.5; }
+      .dialog-note { margin: 0; color: var(--muted); font-size: 9px; line-height: 1.6; }
+      .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+      .secondary-button { min-height: 36px; padding: 0 13px; border: 1px solid #393c32; border-radius: 7px; background: transparent; color: #c1c2b8; cursor: pointer; font-size: 10px; }
+      @media (max-width: 920px) {
+        .app { grid-template-columns: 190px minmax(0, 1fr); }
+        .content { padding-right: 23px; padding-left: 23px; }
+        .dashboard-grid { grid-template-columns: minmax(0, 1.4fr) minmax(215px, .8fr); gap: 14px; }
+      }
+      @media (max-width: 700px) {
+        .app { display: block; padding-bottom: 63px; }
+        .sidebar { position: fixed; top: auto; right: 0; bottom: 0; left: 0; z-index: 3; display: block; width: 100%; height: auto; padding: 7px 8px max(7px, env(safe-area-inset-bottom)); border-top: 1px solid var(--line); border-right: 0; background: #171914; }
+        .brand, .nav-label, .sidebar-bottom { display: none; }
+        .nav { grid-template-columns: repeat(4, 1fr); gap: 3px; }
+        .nav-button { min-height: 46px; flex-direction: column; justify-content: center; gap: 3px; padding: 4px 2px; font-size: 8px; text-align: center; }
+        .nav-icon { font-size: 15px; }
+        .content { padding: 0 15px 28px; }
+        .topbar { min-height: 58px; }
+        .dashboard-grid, .coach-layout { grid-template-columns: 1fr; }
+        .dashboard-grid { padding-top: 21px; }
+        .right-column { display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: 10px; }
+        .right-column .panel + .panel { margin-top: 0; }
+        .coach-card { grid-column: 1 / -1; }
+        .hero { min-height: 190px; padding: 21px; }
+        .hero h2 { max-width: 280px; font-size: 22px; }
+        .all-workouts { grid-template-columns: 1fr; }
+        .progress-summary { gap: 7px; }
+        .progress-summary .stat-card { padding: 12px 9px; }
+        .stat-value { font-size: 17px; }
+      }
+      @media (max-width: 430px) {
+        .right-column { grid-template-columns: 1fr; }
+        .coach-card { grid-column: auto; }
+        .stat-grid { gap: 6px; }
+        .stat-card { padding: 11px 8px; }
+        .stat-label { font-size: 8px; }
+        .stat-value { font-size: 16px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">F</div>
+          <div><div class="brand-name">FORM &amp; FOCUS</div><div class="brand-caption">YOUR PERSONAL COACH</div></div>
+        </div>
+        <div class="nav-label">Workspace</div>
+        <nav class="nav" aria-label="Main navigation">
+          <button class="nav-button active" data-page="dashboard"><span class="nav-icon">⌂</span>Dashboard</button>
+          <button class="nav-button" data-page="workouts"><span class="nav-icon">◈</span>Workouts</button>
+          <button class="nav-button" data-page="coach"><span class="nav-icon">✳</span>AI Coach</button>
+          <button class="nav-button" data-page="progress"><span class="nav-icon">↗</span>Progress</button>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="coach-tip">
+            <div class="coach-tip-label">Coach's note</div>
+            <p>Small, consistent efforts add up. Focus on good form today; the results will follow.</p>
+          </div>
+          <div class="profile">
+            <div class="avatar" aria-hidden="true">A</div>
+            <div><div class="profile-name">Athlete</div><div class="profile-note">Building healthy habits</div></div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="content">
+        <header class="topbar">
+          <div class="breadcrumb">Workspace <span aria-hidden="true">/</span> <strong id="breadcrumb">Dashboard</strong></div>
+          <div class="top-actions"><div class="today" id="today"></div><div class="streak"><span aria-hidden="true">🔥</span><span id="streak">0 day streak</span></div></div>
+        </header>
+
+        <section class="page active" id="page-dashboard">
+          <div class="dashboard-grid">
+            <div class="main-column">
+              <h1 class="greeting" id="greeting">Good to see you.</h1>
+              <p class="subheading">A little movement today is a big win for tomorrow.</p>
+              <section class="hero" aria-label="Today's workout">
+                <div class="hero-kicker">Your next session</div>
+                <h2>Show up. Get stronger.</h2>
+                <p>A balanced strength session built to help you move well and build a lasting routine.</p>
+                <button class="primary-button" data-start="Full Body Strength">Start today's workout <span aria-hidden="true">→</span></button>
+              </section>
+              <div class="stat-grid" aria-label="Your weekly activity">
+                <div class="stat-card"><div class="stat-label">Workouts this week</div><div class="stat-value" id="week-count">0<span class="stat-unit">sessions</span></div></div>
+                <div class="stat-card"><div class="stat-label">Active minutes</div><div class="stat-value" id="week-minutes">0<span class="stat-unit">min</span></div></div>
+                <div class="stat-card"><div class="stat-label">Consistency goal</div><div class="stat-value"><span id="goal-count">0</span><span class="stat-unit">/ 3 days</span></div></div>
+              </div>
+              <div class="section-heading"><h2>Pick your workout</h2><button class="text-button" data-go="workouts">View all workouts →</button></div>
+              <div class="workout-list" id="dashboard-workouts"></div>
+            </div>
+            <aside class="right-column">
+              <section class="panel">
+                <h2 class="panel-title">This week <span aria-hidden="true">↗</span></h2>
+                <p class="panel-subtitle">Your sessions, one day at a time</p>
+                <div class="week-chart" id="dashboard-chart" aria-label="Workout activity this week"></div>
+                <div class="goal-row"><div class="goal-copy"><strong>Weekly movement goal</strong>Three sessions. Your pace.</div><div class="goal-count"><span id="goal-side">0</span> / 3</div></div>
+              </section>
+              <section class="panel coach-card">
+                <h2 class="panel-title"><span>✳ &nbsp;A note from your coach</span></h2>
+                <p id="daily-tip">Consistency beats intensity. Start at a pace you can recover from, and build gradually.</p>
+                <button class="coach-link" data-go="coach">Ask your coach a question →</button>
+              </section>
+            </aside>
+          </div>
+        </section>
+
+        <section class="page" id="page-workouts">
+          <div class="page-header"><h1>Your workouts</h1><p>Choose a session that fits your energy and your day.</p></div>
+          <div class="all-workouts" id="all-workouts"></div>
+        </section>
+
+        <section class="page" id="page-coach">
+          <div class="page-header"><h1>Your AI coach</h1><p>Get practical workout ideas and habit-building support.</p></div>
+          <div class="coach-layout">
+            <section class="panel chat-panel">
+              <div class="chat-top"><div class="coach-avatar" aria-hidden="true">✳</div><div><strong>Form &amp; Focus Coach</strong><div class="online-label">● Ready to help</div></div></div>
+              <div class="chat-messages" id="chat-messages" aria-live="polite">
+                <div class="chat-message">Hey! I'm your workout coach. Tell me your goal, your experience, or what equipment you have, and we'll make a plan that feels doable.</div>
+              </div>
+              <form class="chat-form" id="chat-form"><input id="chat-input" maxlength="400" autocomplete="off" placeholder="Ask about your next workout..." aria-label="Message your coach"><button class="send-button" type="submit" aria-label="Send message">↑</button></form>
+            </section>
+            <aside>
+              <section class="panel">
+                <h2 class="panel-title">Try asking</h2>
+                <div class="prompt-list">
+                  <button class="prompt-button">Make me a beginner strength plan</button>
+                  <button class="prompt-button">I only have 20 minutes today</button>
+                  <button class="prompt-button">How can I build a consistent routine?</button>
+                  <button class="prompt-button">Suggest a recovery day workout</button>
+                </div>
+              </section>
+              <p class="disclaimer">This demo uses built-in responses and is not connected to a live AI model. Coach responses are general fitness guidance, not medical advice. Stop if you feel pain and consult a qualified health professional when needed.</p>
+            </aside>
+          </div>
+        </section>
+
+        <section class="page" id="page-progress">
+          <div class="page-header"><h1>Your progress</h1><p>Every session counts. Here's the work you've put in this week.</p></div>
+          <div class="progress-summary">
+            <div class="stat-card"><div class="stat-label">Sessions completed</div><div class="stat-value" id="progress-count">0</div></div>
+            <div class="stat-card"><div class="stat-label">Time moving</div><div class="stat-value" id="progress-minutes">0<span class="stat-unit">min</span></div></div>
+            <div class="stat-card"><div class="stat-label">Current streak</div><div class="stat-value" id="progress-streak">0<span class="stat-unit">days</span></div></div>
+          </div>
+          <section class="panel progress-panel"><h2 class="panel-title">Weekly activity</h2><p class="panel-subtitle">A little progress is still progress.</p><div class="week-chart" id="progress-chart"></div></section>
+          <div class="section-heading"><h2>Recent sessions</h2></div>
+          <div class="workout-list" id="recent-workouts"></div>
+        </section>
+      </main>
+    </div>
+    <dialog class="session-dialog" id="session-dialog" aria-labelledby="session-title">
+      <div class="dialog-kicker">Your session</div>
+      <h2 id="session-title"></h2>
+      <div class="dialog-meta" id="session-meta"></div>
+      <ol class="exercise-list" id="exercise-list"></ol>
+      <p class="dialog-note">Keep the pace comfortable, use controlled movements, and stop if something hurts. Adjust or skip any movement that doesn't feel right.</p>
+      <div class="dialog-actions">
+        <button class="secondary-button" id="cancel-session" type="button">Not now</button>
+        <button class="primary-button" id="complete-session" type="button">Mark workout complete</button>
+      </div>
+    </dialog>
+    <div class="toast" id="toast" role="status" hidden></div>
+
+    <script>
+      const workouts = [
+        { name: "Full Body Strength", icon: "◉", duration: 35, level: "All levels", type: "Strength", detail: "Squat · Push · Pull · Core", plan: ["Bodyweight squats — 2 sets of 8–10", "Incline push-ups — 2 sets of 6–10", "Backpack or dumbbell rows — 2 sets of 8–12 each side", "Glute bridges — 2 sets of 10", "Dead bugs — 2 sets of 6 each side"] },
+        { name: "Upper Body Focus", icon: "↗", duration: 30, level: "Beginner friendly", type: "Strength", detail: "Chest · Back · Shoulders · Arms", plan: ["Wall or incline push-ups — 2 sets of 6–10", "Backpack or dumbbell rows — 2 sets of 8–12", "Light shoulder presses — 2 sets of 8", "Wall slides — 2 sets of 8", "Easy arm stretch — 30 seconds each side"] },
+        { name: "Lower Body & Core", icon: "⌁", duration: 32, level: "All levels", type: "Strength", detail: "Hinge · Squat · Glutes · Core", plan: ["Chair squats — 2 sets of 8–10", "Hip hinges — 2 sets of 10", "Glute bridges — 2 sets of 10", "Supported reverse lunges — 2 sets of 6 each side", "Bird-dogs — 2 sets of 6 each side"] },
+        { name: "Easy Cardio Reset", icon: "〰", duration: 20, level: "Low impact", type: "Cardio", detail: "Easy pace · Move at your own speed", plan: ["Easy walk or march — 3 minutes", "Alternate 1 minute brisk with 1 minute easy — 6 rounds", "Cool down at an easy pace — 3 minutes", "Keep a pace where you can still talk comfortably"] },
+        { name: "Mobility & Stretch", icon: "✳", duration: 15, level: "Recovery", type: "Recovery", detail: "Hips · Spine · Shoulders · Breath", plan: ["Cat-cow — 6 gentle repetitions", "Hip flexor stretch — 20 seconds each side", "Open-book rotation — 6 each side", "Chest doorway stretch — 20 seconds each side", "Finish with 5 slow, comfortable breaths"] },
+        { name: "Quick Energy Circuit", icon: "⚡", duration: 18, level: "All levels", type: "Bodyweight", detail: "Simple moves · Flexible pace", plan: ["Chair squats — 8 repetitions", "Wall push-ups — 8 repetitions", "Glute bridges — 10 repetitions", "March in place — 30 seconds", "Repeat at a comfortable pace; rest whenever needed"] }
+      ];
+      const storeKey = "form-focus-workouts-v1";
+      let sessions = loadSessions();
+      let toastTimer;
+      let activeWorkout = null;
+
+      function loadSessions() {
+        try {
+          const value = JSON.parse(localStorage.getItem(storeKey) || "[]");
+          return Array.isArray(value) ? value.filter((item) => {
+            if (!item || typeof item.name !== "string" || typeof item.duration !== "number" || typeof item.date !== "string") return false;
+            const workout = workouts.find((option) => option.name === item.name);
+            return workout && workout.duration === item.duration && Number.isFinite(Date.parse(item.date));
+          }) : [];
+        } catch (error) {
+          console.error("Could not read saved workout history:", error);
+          return [];
+        }
+      }
+
+      function saveSessions() {
+        try {
+          localStorage.setItem(storeKey, JSON.stringify(sessions));
+        } catch (error) {
+          console.error("Could not save workout history:", error);
+          showToast("Your workout couldn't be saved on this device.");
+        }
+      }
+
+      function dayKey(date) {
+        const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+        return local.toISOString().slice(0, 10);
+      }
+
+      function weekStart(date) {
+        const start = new Date(date);
+        start.setHours(0, 0, 0, 0);
+        start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+        return start;
+      }
+
+      function getWeekSessions() {
+        const start = weekStart(new Date());
+        const end = new Date(start);
+        end.setDate(end.getDate() + 7);
+        return sessions.filter((session) => {
+          const date = new Date(session.date);
+          return date >= start && date < end;
+        });
+      }
+
+      function currentStreak() {
+        const workoutDays = new Set(sessions.map((session) => dayKey(new Date(session.date))));
+        const cursor = new Date();
+        cursor.setHours(0, 0, 0, 0);
+        if (!workoutDays.has(dayKey(cursor))) cursor.setDate(cursor.getDate() - 1);
+        let streak = 0;
+        while (workoutDays.has(dayKey(cursor))) {
+          streak += 1;
+          cursor.setDate(cursor.getDate() - 1);
+        }
+        return streak;
+      }
+
+      function weekChartMarkup() {
+        const start = weekStart(new Date());
+        const counts = Array(7).fill(0);
+        getWeekSessions().forEach((session) => {
+          const dayIndex = (new Date(session.date).getDay() + 6) % 7;
+          counts[dayIndex] += 1;
+        });
+        const labels = ["M", "T", "W", "T", "F", "S", "S"];
+        return labels.map((label, index) => {
+          const date = new Date(start);
+          date.setDate(start.getDate() + index);
+          const active = counts[index] > 0;
+          const height = active ? Math.min(100, 25 + counts[index] * 38) : 8;
+          const isToday = dayKey(date) === dayKey(new Date());
+          return `<div class="day-column" aria-label="${date.toLocaleDateString(undefined, { weekday: "long" })}: ${counts[index]} workout${counts[index] === 1 ? "" : "s"}"><div class="bar-track"><div class="bar-fill${active ? " done" : ""}" style="height:${height}%"></div></div><div class="day-label${isToday ? " today" : ""}">${label}</div></div>`;
+        }).join("");
+      }
+
+      function workoutCardMarkup(workout) {
+        return `<article class="workout-card"><div class="workout-symbol" aria-hidden="true">${workout.icon}</div><div><div class="workout-name">${workout.name}</div><div class="workout-meta">${workout.duration} min &nbsp;·&nbsp; ${workout.detail}</div></div><button class="workout-tag" data-start="${workout.name}" aria-label="Start ${workout.name}">${workout.type} →</button></article>`;
+      }
+
+      function render() {
+        const weekSessions = getWeekSessions();
+        const totalMinutes = weekSessions.reduce((total, item) => total + item.duration, 0);
+        const uniqueDays = new Set(weekSessions.map((item) => dayKey(new Date(item.date)))).size;
+        const streak = currentStreak();
+        document.getElementById("today").textContent = new Date().toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+        document.getElementById("greeting").textContent = `${new Date().getHours() < 12 ? "Good morning" : new Date().getHours() < 18 ? "Good afternoon" : "Good evening"}.`;
+        document.getElementById("streak").textContent = `${streak} day${streak === 1 ? "" : "s"} streak`;
+        document.getElementById("week-count").innerHTML = `${weekSessions.length}<span class="stat-unit">sessions</span>`;
+        document.getElementById("week-minutes").innerHTML = `${totalMinutes}<span class="stat-unit">min</span>`;
+        document.getElementById("goal-count").textContent = uniqueDays;
+        document.getElementById("goal-side").textContent = Math.min(uniqueDays, 3);
+        document.getElementById("dashboard-workouts").innerHTML = workouts.slice(0, 3).map(workoutCardMarkup).join("");
+        document.getElementById("all-workouts").innerHTML = workouts.map(workoutCardMarkup).join("");
+        document.getElementById("dashboard-chart").innerHTML = weekChartMarkup();
+        document.getElementById("progress-chart").innerHTML = weekChartMarkup();
+        document.getElementById("progress-count").textContent = weekSessions.length;
+        document.getElementById("progress-minutes").innerHTML = `${totalMinutes}<span class="stat-unit">min</span>`;
+        document.getElementById("progress-streak").innerHTML = `${streak}<span class="stat-unit">days</span>`;
+        const recent = [...sessions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+        document.getElementById("recent-workouts").innerHTML = recent.length
+          ? recent.map((session) => `<article class="workout-card"><div class="workout-symbol" aria-hidden="true">✓</div><div><div class="workout-name">${session.name}</div><div class="workout-meta">${session.duration} min &nbsp;·&nbsp; ${new Date(session.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</div></div><span class="workout-tag">Completed</span></article>`).join("")
+          : '<div class="empty-state">Your completed sessions will show up here. Pick a workout to get started.</div>';
+      }
+
+      function showToast(message) {
+        const toast = document.getElementById("toast");
+        toast.textContent = message;
+        toast.hidden = false;
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => { toast.hidden = true; }, 2800);
+      }
+
+      function openWorkout(name) {
+        activeWorkout = workouts.find((item) => item.name === name);
+        if (!activeWorkout) return;
+        document.getElementById("session-title").textContent = activeWorkout.name;
+        document.getElementById("session-meta").textContent = `${activeWorkout.duration} minutes · ${activeWorkout.level}`;
+        document.getElementById("exercise-list").innerHTML = activeWorkout.plan.map((item) => `<li>${item}</li>`).join("");
+        document.getElementById("session-dialog").showModal();
+      }
+
+      function completeWorkout() {
+        if (!activeWorkout) return;
+        sessions.push({ name: activeWorkout.name, duration: activeWorkout.duration, date: new Date().toISOString() });
+        const completedName = activeWorkout.name;
+        activeWorkout = null;
+        document.getElementById("session-dialog").close();
+        saveSessions();
+        render();
+        showToast(`${completedName} added to your progress. Nice work!`);
+      }
+
+      function switchPage(page) {
+        document.querySelectorAll(".page").forEach((section) => section.classList.toggle("active", section.id === `page-${page}`));
+        document.querySelectorAll(".nav-button").forEach((button) => button.classList.toggle("active", button.dataset.page === page));
+        document.getElementById("breadcrumb").textContent = page[0].toUpperCase() + page.slice(1);
+      }
+
+      function coachReply(message) {
+        const text = message.toLowerCase();
+        if (/pain|injur|hurt|sore knee|medical/.test(text)) {
+          return "Please don't train through pain. Stop the movement that's causing discomfort, and check in with a qualified healthcare professional about pain or an injury. I can help you think of a gentle, pain-free alternative once you're cleared.";
+        }
+        if (/beginner|start|new to|strength plan/.test(text)) {
+          return "A good beginner rhythm is 2–3 full-body sessions each week, with a rest day between them. Start with a squat, a push, a pull, and a simple core move. Try 2 easy sets of 8–10 reps and leave a little energy in reserve while you learn the movements. What equipment do you have?";
+        }
+        if (/20|min|short|quick|busy/.test(text)) {
+          return "Twenty minutes is plenty to get moving. Try 3 minutes of easy warm-up, then 3 rounds at a comfortable pace: 8 chair squats, 8 wall or incline push-ups, 10 hip hinges, and a 30-second brisk walk in place. Rest whenever you need to; quality matters more than speed.";
+        }
+        if (/recover|rest|stretch|mobility|tired/.test(text)) {
+          return "Make today easy: take a relaxed 10–20 minute walk, then spend a few comfortable breaths on hip, chest, and upper-back mobility. Keep every stretch gentle, skip anything painful, and remember that a full rest day is a productive choice too.";
+        }
+        if (/consistent|habit|routine|motivat/.test(text)) {
+          return "Make the plan easy to repeat: pick 2–3 realistic days, choose a time you can protect, and set a small minimum (even 10 minutes counts). Track showing up rather than chasing a perfect workout. Which days usually work best for you?";
+        }
+        if (/weight|lose|diet|calorie|nutrition|meal/.test(text)) {
+          return "For nutrition or weight goals, focus on sustainable habits and avoid extreme restrictions. Regular meals, a variety of nourishing foods, sleep, and consistent activity are a helpful foundation. A registered dietitian can offer advice tailored to your health and needs.";
+        }
+        if (/home|equipment|dumbbell|gym/.test(text)) {
+          return "You can build a useful session around what you have. With no equipment, try chair squats, wall push-ups, glute bridges, and bird-dogs. With dumbbells, add light rows and hinges. Tell me what equipment and experience you have and I can tailor it.";
+        }
+        return "A practical next step is to choose a goal, a session length that fits your day, and a pace that feels manageable. Start with a comfortable warm-up, focus on controlled movement, and take rest when needed. What's your main goal or what equipment do you have?";
+      }
+
+      function sendMessage(message) {
+        const trimmed = message.trim();
+        if (!trimmed) return;
+        const messages = document.getElementById("chat-messages");
+        const userMessage = document.createElement("div");
+        userMessage.className = "chat-message user";
+        userMessage.textContent = trimmed;
+        messages.appendChild(userMessage);
+        const response = document.createElement("div");
+        response.className = "chat-message";
+        response.textContent = coachReply(trimmed);
+        messages.appendChild(response);
+        messages.scrollTop = messages.scrollHeight;
+      }
+
+      document.addEventListener("click", (event) => {
+        const nav = event.target.closest("[data-page]");
+        const go = event.target.closest("[data-go]");
+        const start = event.target.closest("[data-start]");
+        if (nav) switchPage(nav.dataset.page);
+        if (go) switchPage(go.dataset.go);
+        if (start) openWorkout(start.dataset.start);
+        const prompt = event.target.closest(".prompt-button");
+        if (prompt) {
+          const input = document.getElementById("chat-input");
+          input.value = prompt.textContent;
+          input.focus();
+        }
+      });
+
+      document.getElementById("chat-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const input = document.getElementById("chat-input");
+        sendMessage(input.value);
+        input.value = "";
+      });
+
+      document.getElementById("complete-session").addEventListener("click", completeWorkout);
+      document.getElementById("cancel-session").addEventListener("click", () => {
+        activeWorkout = null;
+        document.getElementById("session-dialog").close();
+      });
+
+      render();
+    </script>
+  </body>
+</html>
